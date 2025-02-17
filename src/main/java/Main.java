@@ -12,15 +12,33 @@ public class Main {
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         Scheduler scheduler = schedulerFactory.getScheduler();
 
-        JobDetail greetingJob = getGreetingJob();
-        Trigger greetingTrigger = getGreetingTrigger();
+        // Using a trigger with a simple schedule
+        JobDetail simpleGreetingJob = getGreetingJob("simpleGreetingJob");
+        Trigger simpleGreetingTrigger = getSimpleGreetingTrigger();
 
-        scheduler.scheduleJob(greetingJob, greetingTrigger);
+        scheduler.scheduleJob(simpleGreetingJob, simpleGreetingTrigger);
+
+        // Using a trigger with cron expression schedule
+        JobDetail cronGreetingJob = getGreetingJob("cronGreetingJob");
+        Trigger cronGreetingTrigger = getCronGreetingTrigger();
+
+        scheduler.scheduleJob(cronGreetingJob, cronGreetingTrigger);
 
         scheduler.start();
     }
 
-    private static Trigger getGreetingTrigger() {
+    private static JobDetail getGreetingJob(String name) {
+        /* Job executes a task defined in its execute method
+        A job instance may have a map of parameters, called JobDataMap */
+        return JobBuilder.newJob(GreetingJob.class)
+                .withIdentity(name, "myGroup")
+                .usingJobData("personName", "John Doe")
+                .usingJobData("age", 25)
+                .build();
+    }
+
+    // Returns a Trigger using Simple schedule
+    private static Trigger getSimpleGreetingTrigger() {
         // ScheduleBuilder is responsible for creating schedules with the specified properties
         SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
                 .withIntervalInSeconds(5)
@@ -38,13 +56,14 @@ public class Main {
                 .build();
     }
 
-    private static JobDetail getGreetingJob() {
-        /* Job executes a task defined in its execute method
-        A job instance may have a map of parameters, called JobDataMap */
-        return JobBuilder.newJob(GreetingJob.class)
-                .withIdentity("myGreetingJob", "myGroup")
-                .usingJobData("personName", "John Doe")
-                .usingJobData("age", 25)
+    // Returns a Trigger using Cron schedule
+    private static Trigger getCronGreetingTrigger() {
+        // Runs every 10 seconds
+        CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule("0/10 * * * * ?");
+
+        return TriggerBuilder.newTrigger()
+                .withIdentity("myCronTrigger", "myGroup")
+                .withSchedule(scheduleBuilder)
                 .build();
     }
 }
